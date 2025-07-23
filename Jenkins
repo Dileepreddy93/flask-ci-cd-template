@@ -1,75 +1,74 @@
 pipeline {
-    // Use a Docker container as the primary environment for this pipeline.
-    // This ensures consistency and avoids polluting the Jenkins agent.
-    agent {
-        docker {
-            image 'python:3.9-slim'
-            // Run subsequent 'sh' commands as the root user inside the container
-            args '-u root'
-        }
-    }
+    agent any
 
     environment {
-        // ### UPDATE THESE VARIABLES ###
-        // The name for your Docker image.
         DOCKER_IMAGE_NAME = 'your-username/your-flask-app'
-        // The ID of your Docker Hub credentials stored in Jenkins.
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
     }
 
     stages {
-        stage('1. Install Dependencies') {
+        stage('1. Install & Scan Dependencies') {
+            // Run this stage inside a clean Python container
+            agent { docker { image 'python:3.9-slim' } }
             steps {
-                echo 'Installing Python dependencies...'
-                // Install dependencies defined in requirements.txt
                 sh 'pip install --no-cache-dir -r requirements.txt'
-                // Also install tools needed for the pipeline itself
+                sh 'pip install pip-audit'
+                echo 'Scanning dependencies for known vulnerabilities...'
+                // Fails the build if vulnerabilities are found
+                sh 'pip-audit'
+            }
+        }
+
+        stage('2. Lint & Test') {
+            agent { docker { image 'python:3.9-slim' } }
+            steps {
                 sh 'pip install pytest flake8'
-            }
-        }
-
-        stage('2. Code Linting') {
-            steps {
-                echo 'Checking code style with Flake8...'
-                // Run the linter to enforce code quality.
-                // This command will fail the build if issues are found.
+                echo 'Linting code with Flake8...'
                 sh 'flake8 . --count --show-source --statistics'
-            }
-        }
-
-        stage('3. Run Unit Tests') {
-            steps {
                 echo 'Running unit tests with Pytest...'
-                // Run tests and generate a report in JUnit XML format.
-                // Jenkins will use this file to display test results.
                 sh 'pytest tests/ --junitxml=test-reports.xml'
             }
         }
 
-        stage('4. Build Docker Image') {
-            // This stage requires a Docker daemon, so it runs on any
-            // Jenkins agent that has Docker installed.
-            agent any
+        stage('3. Build Docker Image') {
             steps {
                 script {
                     echo "Building Docker image: ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                    // Build the Docker image using the Dockerfile in your repo
-                    def customImage = docker.build("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}", ".")
-                    
-                    // Log in to Docker Hub and push the image
-                    docker.withRegistry('https://registry.hub.docker.com', env.DOCKER_CREDENTIALS_ID) {
-                        customImage.push()
-                        // Also push a 'latest' tag for convenience
-                        customImage.push('latest')
-                    }
+                    docker.build("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}", ".")
                 }
             }
         }
 
-        stage('5. Deploy') {
-            // This critical stage will only run on pushes to the 'main' branch.
-            when {
-                branch 'main'
-            }
+        stage('4. Scan Docker Image for Vulnerabilities') {
+            // Use the official Trivy container to perform the scan
+            agent { docker { image 'aquasec/trivy:latest' } }
             steps {
-                echo "Deploying version
+                echo "Scanning ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER} with Trivy..."
+                // Fails the build if HIGH or CRITICAL vulnerabilities are found in the OS
+                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+            }
+        }
+
+        stage('5. Push and Deploy') {
+            when { branch 'main' }
+            steps {
+                script {
+                    // Push the now-verified image to the registry
+                    docker.withRegistry('https://registry.hub.docker.com', env.DOCKER_CREDENTIALS_ID) {
+                        docker.image("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}").push()
+                        docker.image("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}").push('latest')
+                    }
+                    // Placeholder for your deployment script
+                    echo "Deploying verified image ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}..."
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'test-reports.xml'
+            cleanWs()
+        }
+    }
+}
