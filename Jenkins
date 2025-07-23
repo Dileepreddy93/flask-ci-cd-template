@@ -1,39 +1,75 @@
 pipeline {
-    agent any
+    // Use a Docker container as the primary environment for this pipeline.
+    // This ensures consistency and avoids polluting the Jenkins agent.
+    agent {
+        docker {
+            image 'python:3.9-slim'
+            // Run subsequent 'sh' commands as the root user inside the container
+            args '-u root'
+        }
+    }
+
+    environment {
+        // ### UPDATE THESE VARIABLES ###
+        // The name for your Docker image.
+        DOCKER_IMAGE_NAME = 'your-username/your-flask-app'
+        // The ID of your Docker Hub credentials stored in Jenkins.
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
+    }
 
     stages {
-        stage('Checkout') {
+        stage('1. Install Dependencies') {
             steps {
-                echo 'Checking out source code...'
-                // This step is usually handled by Jenkins automatically.
+                echo 'Installing Python dependencies...'
+                // Install dependencies defined in requirements.txt
+                sh 'pip install --no-cache-dir -r requirements.txt'
+                // Also install tools needed for the pipeline itself
+                sh 'pip install pytest flake8'
             }
         }
-        stage('Install Dependencies') {
+
+        stage('2. Code Linting') {
             steps {
-                echo 'Installing Python packages...'
-                // This command reads your requirements.txt file and installs the libraries.
-                sh 'pip install -r requirements.txt'
+                echo 'Checking code style with Flake8...'
+                // Run the linter to enforce code quality.
+                // This command will fail the build if issues are found.
+                sh 'flake8 . --count --show-source --statistics'
             }
         }
-        stage('Test') {
+
+        stage('3. Run Unit Tests') {
             steps {
-                echo 'Running tests...'
-                // This is a common command to run tests using the pytest framework.
-                // If you use a different testing tool, change this line.
-                sh 'pytest'
+                echo 'Running unit tests with Pytest...'
+                // Run tests and generate a report in JUnit XML format.
+                // Jenkins will use this file to display test results.
+                sh 'pytest tests/ --junitxml=test-reports.xml'
             }
         }
-    }
-    post {
-        // The 'post' section runs after all the stages are complete.
-        always {
-            echo 'Pipeline finished.'
+
+        stage('4. Build Docker Image') {
+            // This stage requires a Docker daemon, so it runs on any
+            // Jenkins agent that has Docker installed.
+            agent any
+            steps {
+                script {
+                    echo "Building Docker image: ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    // Build the Docker image using the Dockerfile in your repo
+                    def customImage = docker.build("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}", ".")
+                    
+                    // Log in to Docker Hub and push the image
+                    docker.withRegistry('https://registry.hub.docker.com', env.DOCKER_CREDENTIALS_ID) {
+                        customImage.push()
+                        // Also push a 'latest' tag for convenience
+                        customImage.push('latest')
+                    }
+                }
+            }
         }
-        success {
-            echo 'Hooray! The pipeline was successful. ✅'
-        }
-        failure {
-            echo 'Oops! The pipeline failed.'
-        }
-    }
-}
+
+        stage('5. Deploy') {
+            // This critical stage will only run on pushes to the 'main' branch.
+            when {
+                branch 'main'
+            }
+            steps {
+                echo "Deploying version
