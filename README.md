@@ -1,4 +1,4 @@
-# [Project Title]
+# [Flask-ci-cd-pipeline]
 
 [![CI/CD Pipeline Status](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/badge/icon)](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/)
 [![Vulnerability Scan](https://img.shields.io/badge/vulnerability_scan-passing-green?style=for-the-badge)](https://www.aquasec.com/products/trivy/)
