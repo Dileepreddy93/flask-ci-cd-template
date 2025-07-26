@@ -78,7 +78,7 @@ Make sure you have the following tools installed on your system:
 
 1.  **Clone the repository:**
     ```sh
-    git clone [https://github.com/your-username/your-repository.git](https://github.com/your-username/your-repository.git)
+    git clone [https://github.com/dileepreddy93/your-repository.git](https://github.com/dileepreddy93/your-repository.git)
     cd your-repository
     ```
 
