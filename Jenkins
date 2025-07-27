@@ -1,78 +1,32 @@
-// A more robust and complete Jenkinsfile
 pipeline {
     agent any
 
     environment {
-        // Define your Docker Hub registry URL
-        DOCKER_REGISTRY_URL = 'https://registry.hub.docker.com'
-        // IMPORTANT: Replace 'username/repository' with your actual Docker Hub username and repo name
-        DOCKER_IMAGE_NAME = 'your-dockerhub-username/your-repo-name'
-        // The ID of your Docker Hub credentials stored in Jenkins
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        // Get the Deploy Hook from Jenkins Credentials
+        RENDER_DEPLOY_HOOK_URL = credentials('render-deploy-hook')
     }
 
     stages {
-        stage('1. Build Docker Image') {
+        stage('Install Dependencies') {
             steps {
-                script {
-                    echo "Building Docker image: ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                    // This command builds the Docker image from your Dockerfile
-                    docker.build("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}", ".")
-                }
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate && pip install -r requirements.txt'
             }
         }
 
-        stage('2. Run Tests') {
+        stage('Test') {
             steps {
-                // This is a placeholder. You should replace this with your actual test command.
-                // For example, you might run tests inside your newly built container.
-                echo "Running automated tests..."
-                // Example: sh "docker run --rm ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER} pytest"
-                
-                // This command creates a dummy test report. Your test framework should generate this.
-                sh 'mkdir -p test-reports && touch test-reports/junit-report.xml'
+                // Run your tests with pytest
+                sh '. venv/bin/activate && pytest'
             }
         }
 
-        stage('3. Scan Docker Image for Vulnerabilities') {
+        stage('Deploy to Render') {
             steps {
-                echo "Scanning image for vulnerabilities: ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                // Your original Trivy command to check for HIGH and CRITICAL vulnerabilities
-                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                echo 'Tests passed. Triggering Render deployment...'
+                // Call the Render Deploy Hook URL to start the deployment
+                sh "curl -X POST ${RENDER_DEPLOY_HOOK_URL}"
             }
-        }
-
-        stage('4. Push and Deploy') {
-            // This stage only runs on pushes to the 'main' branch
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    // Log in to Docker Hub and push the verified image
-                    docker.withRegistry(env.DOCKER_REGISTRY_URL, env.DOCKER_CREDENTIALS_ID) {
-                        // Push the image with the build number tag
-                        docker.image("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}").push()
-                        // Also update the 'latest' tag
-                        docker.image("${env.DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}").push('latest')
-                    }
-
-                    // 👉 Placeholder for your actual deployment script
-                    echo "Deploying verified image ${env.DOCKER_IMAGE_NAME}:latest to production..."
-                    // Example for Kubernetes: sh 'kubectl set image deployment/your-app-deployment app=${DOCKER_IMAGE_NAME}:latest'
-                    // Example for SSH: sh 'ssh user@your-server "docker pull ${DOCKER_IMAGE_NAME}:latest && docker-compose up -d"'
-                }
-            }
-        }
-    }
-
-    post {
-        // This block runs after all stages are completed
-        always {
-            // Archive the test results. The path should match what your test framework produces.
-            junit 'test-reports/*.xml'
-            // Clean up the Jenkins workspace
-            cleanWs()
         }
     }
 }
