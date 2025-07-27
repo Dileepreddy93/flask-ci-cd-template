@@ -1,107 +1,67 @@
-# [Flask-ci-cd-pipeline]
+# Flask CI/CD Project with Jenkins and Render
 
-[![CI/CD Pipeline Status](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/badge/icon)](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/)
-[![Vulnerability Scan](https://img.shields.io/badge/vulnerability_scan-passing-green?style=for-the-badge)](https://www.aquasec.com/products/trivy/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Build Status](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/badge/icon)](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/)
 
-> _Last Updated: July 26, 2025_
-
-A brief one-sentence description of what this project does and the problem it solves.
-
----
-
-## 📖 Table of Contents
-- [About The Project](#-about-the-project)
-- [✨ Features](#-features)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [🔄 CI/CD Pipeline Workflow](#-cicd-pipeline-workflow)
-- [🚀 Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Local Installation](#local-installation)
-- [⚙️ Jenkins Configuration](#️-jenkins-configuration)
-- [📜 License](#-license)
-- [📧 Contact](#-contact)
-
----
-
-## 🌟 About The Project
-
-Provide a more detailed explanation of your project here. Discuss the main goals, who the target audience is, and why you built it.
-
----
+This repository contains a sample Flask web application configured with a complete CI/CD pipeline. The pipeline uses Jenkins for continuous integration (testing) and automatically deploys the application to Render upon a successful build.
 
 ## ✨ Features
 
-- **Feature A:** Description of what feature A does.
-- **Feature B:** Description of what feature B does.
-- **Containerized Environment:** Runs consistently everywhere thanks to Docker.
-- **Automated CI/CD:** Fully automated build, test, and deployment pipeline using Jenkins.
-- **Security Scanning:** Automated vulnerability scanning with Trivy.
+- **Backend:** A lightweight web server using the Flask framework.
+- **Frontend:** A simple user interface built with standard HTML, CSS, and JavaScript.
+- **CI/CD Pipeline:** An automated pipeline managed by a `Jenkinsfile`.
+- **Automated Testing:** Unit tests are run automatically with `pytest` on every push.
+- **Automated Deployment:** The application is deployed to Render automatically after all tests pass.
 
----
+## 🛠️ Tech Stack
 
-## 🛠️ Technology Stack
+- **Backend:** Python 3, Flask
+- **Frontend:** HTML, CSS, JavaScript
+- **CI/CD:** Jenkins, Git
+- **Hosting:** Render
+- **Testing:** pytest
 
-This project is built using the following technologies:
+## 🚀 Local Setup
 
-- **Backend:** [Python](https://www.python.org/) (based on `requirements.txt`)
-- **Containerization:** [Docker](https://www.docker.com/)
-- **CI/CD Automation:** [Jenkins](https://www.jenkins.io/)
-- **Security:** [Trivy](https://www.aquasec.com/products/trivy/)
-- **Version Control:** [Git](https://git-scm.com/)
+To run this project on your local machine, follow these steps.
 
----
+**Prerequisites:**
+- Python 3.8+
+- `pip` and `venv`
+- Git
 
-## 🔄 CI/CD Pipeline Workflow
-
-This project uses a Jenkins pipeline to automate the integration and deployment process. The workflow is defined in the `Jenkinsfile` and consists of the following stages:
-
-1.  **📦 Build Docker Image**: Compiles the application and builds a Docker image using the `Dockerfile`.
-2.  **🧪 Run Tests**: Executes automated tests against the new build to ensure code quality and functionality.
-3.  **🛡️ Scan for Vulnerabilities**: Uses Trivy to scan the Docker image for any `HIGH` or `CRITICAL` vulnerabilities before it can be pushed.
-4.  **🚀 Push & Deploy**: If the build is on the `main` branch and all previous stages pass, the pipeline pushes the verified Docker image to Docker Hub and triggers a deployment.
-
----
-
-## 🚀 Getting Started
-
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
-
-### Prerequisites
-
-Make sure you have the following tools installed on your system:
-- Python 3.x
-- Pip
-- Docker
-
-### Local Installation
-
+**Installation:**
 1.  **Clone the repository:**
-    ```sh
-    git clone [https://github.com/dileepreddy93/your-repository.git](https://github.com/dileepreddy93/your-repository.git)
-    cd your-repository
+    ```bash
+    git clone [https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git)
+    cd YOUR_REPOSITORY
     ```
-
-2.  **Install Python dependencies:**
-    ```sh
+2.  **Create and activate a virtual environment:**
+    ```bash
+    # For macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+3.  **Install the dependencies:**
+    ```bash
     pip install -r requirements.txt
     ```
-
-3.  **Build the Docker image:**
-    ```sh
-    docker build -t your-image-name .
+4.  **Run the application:**
+    ```bash
+    python app.py
     ```
+5.  Open your browser and navigate to `http://127.0.0.1:5000`.
 
-4.  **Run the Docker container:**
-    ```sh
-    docker run -p 8080:80 your-image-name
-    ```
-    The application should now be accessible at `http://localhost:8080`.
+## 🔄 CI/CD Pipeline Overview
 
----
+The CI/CD pipeline is designed to ensure code quality and automate deployments.
 
-## ⚙️ Jenkins Configuration
+1.  **Trigger:** A `git push` to the `main` branch automatically triggers the Jenkins pipeline.
+2.  **Install Dependencies:** Jenkins creates a clean environment and installs all required packages from `requirements.txt`.
+3.  **Test:** The `pytest` test suite is executed. If any test fails, the pipeline stops.
+4.  **Deploy to Render:** If all tests pass, Jenkins sends a request to a secure **Deploy Hook**, which tells Render to pull the latest code and deploy the new version of the application.
 
-To use the `Jenkinsfile` in this repository, you need to configure a Jenkins job:
+## 🌐 Deployment
 
-1.  **Create a New Job**: In Jenkins, select "New Item", enter a name
+This application is hosted on Render and is updated automatically by the CI/CD pipeline.
+
+The live application is available at: **[https://YOUR_APP_NAME.onrender.com](https://YOUR_APP_NAME.
