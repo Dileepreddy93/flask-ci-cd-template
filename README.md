@@ -1,6 +1,6 @@
 # Flask CI/CD Project with Jenkins and Render
 
-[![Build Status](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/badge/icon)](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/)
+[![Build Status](http://YOUR_JENKINS_URL/job/Flask-ci-cd-template/badge/icon)](http://YOUR_JENKINS_URL/job/YOUR_PROJECT_NAME/)
 
 This repository contains a sample Flask web application configured with a complete CI/CD pipeline. The pipeline uses Jenkins for continuous integration (testing) and automatically deploys the application to Render upon a successful build.
 
