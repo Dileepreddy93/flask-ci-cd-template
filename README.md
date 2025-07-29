@@ -64,4 +64,4 @@ The CI/CD pipeline is designed to ensure code quality and automate deployments.
 
 This application is hosted on Render and is updated automatically by the CI/CD pipeline.
 
-The live application is available at: **[https://YOUR_APP_NAME.onrender.com](https://YOUR_APP_NAME.
+The live application is available at: **[https://FLASK-CI-CD-TEMPLATE.onrender.com](https://YOUR_APP_NAME.
